@@ -13,7 +13,9 @@
 // Description: Ariane Top-level wrapper to break out SV structs to logic vectors.
 
 
-module ariane_verilog_wrap #(
+module ariane_verilog_wrap
+    import ariane_pkg::*;
+#(
   parameter int unsigned               RASDepth              = 2,
   parameter int unsigned               BTBEntries            = 32,
   parameter int unsigned               BHTEntries            = 128,
@@ -23,9 +25,9 @@ module ariane_verilog_wrap #(
   parameter bit                        SwapEndianess         = 1,
   // PMA configuration
   // idempotent region
-  parameter int unsigned               NrNonIdempotentRules  =  0,
-  parameter logic [NrMaxRules*64-1:0]  NonIdempotentAddrBase = '0,
-  parameter logic [NrMaxRules*64-1:0]  NonIdempotentLength   = '0,
+  parameter int unsigned               NrNonIdempotentRules  =  1,
+  parameter logic [NrMaxRules*64-1:0]  NonIdempotentAddrBase = 64'h00C0000000,
+  parameter logic [NrMaxRules*64-1:0]  NonIdempotentLength   = 64'hFFFFFFFFFF,
   // executable regions
   parameter int unsigned               NrExecuteRegionRules  =  0,
   parameter logic [NrMaxRules*64-1:0]  ExecuteRegionAddrBase = '0,
@@ -33,14 +35,16 @@ module ariane_verilog_wrap #(
   // cacheable regions
   parameter int unsigned               NrCachedRegionRules   =  0,
   parameter logic [NrMaxRules*64-1:0]  CachedRegionAddrBase  = '0,
-  parameter logic [NrMaxRules*64-1:0]  CachedRegionLength    = '0
+  parameter logic [NrMaxRules*64-1:0]  CachedRegionLength    = '0,
+  // PMP
+  parameter int unsigned               NrPMPEntries          =  8
 ) (
   input                       clk_i,
   input                       reset_l,      // this is an openpiton-specific name, do not change (hier. paths in TB use this)
   output                      spc_grst_l,   // this is an openpiton-specific name, do not change (hier. paths in TB use this)
   // Core ID, Cluster ID and boot address are considered more or less static
-  input  [63:0]               boot_addr_i,  // reset boot address
-  input  [63:0]               hart_id_i,    // hart id in a multicore environment (reflected in a CSR)
+  input  [riscv::VLEN-1:0]               boot_addr_i,  // reset boot address
+  input  [riscv::XLEN-1:0]               hart_id_i,    // hart id in a multicore environment (reflected in a CSR)
   // Interrupt inputs
   input  [1:0]                irq_i,        // level sensitive IR lines, mip & sip (async)
   input                       ipi_i,        // inter-processor interrupts (async)
@@ -185,7 +189,8 @@ module ariane_verilog_wrap #(
     Axi64BitCompliant:     1'b0,
     SwapEndianess:         SwapEndianess,
     // debug
-    DmBaseAddress:         DmBaseAddress
+    DmBaseAddress:         DmBaseAddress,
+    NrPMPEntries:          NrPMPEntries
   };
 
   ariane #(

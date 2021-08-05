@@ -1,19 +1,19 @@
-[![Build Status](https://travis-ci.org/pulp-platform/ariane.svg?branch=master)](https://travis-ci.org/pulp-platform/ariane)
+![Build Status](https://github.com/openhwgroup/cva6/actions/workflows/ci.yml/badge.svg?branch=master)
 
-# Ariane RISC-V CPU
+# CVA6 RISC-V CPU
 
-Ariane is a 6-stage, single issue, in-order CPU which implements the 64-bit RISC-V instruction set. It fully implements I, M, A and C extensions as specified in Volume I: User-Level ISA V 2.3 as well as the draft privilege extension 1.10. It implements three privilege levels M, S, U to fully support a Unix-like operating system. Furthermore it is compliant to the draft external debug spec 0.13.
+CVA6 is a 6-stage, single issue, in-order CPU which implements the 64-bit RISC-V instruction set. It fully implements I, M, A and C extensions as specified in Volume I: User-Level ISA V 2.3 as well as the draft privilege extension 1.10. It implements three privilege levels M, S, U to fully support a Unix-like operating system. Furthermore it is compliant to the draft external debug spec 0.13.
 
 It has configurable size, separate TLBs, a hardware PTW and branch-prediction (branch target buffer and branch history table). The primary design goal was on reducing critical path length.
 
-![](docs/img/ariane_overview.png)
+![](docs/_static/ariane_overview.png)
 
 ## Publication
 
-If you use Ariane in your academic work you can cite us:
+If you use CVA6 in your academic work you can cite us:
 
 ```
-@article{8777130,
+@article{zaruba2019cost,
    author={F. {Zaruba} and L. {Benini}},
    journal={IEEE Transactions on Very Large Scale Integration (VLSI) Systems},
    title={The Cost of Application-Class Processing: Energy and Performance Analysis of a Linux-Ready 1.7-GHz 64-Bit RISC-V Core in 22-nm FDSOI Technology},
@@ -30,7 +30,7 @@ If you use Ariane in your academic work you can cite us:
 Table of Contents
 =================
 
-   * [Ariane RISC-V CPU](#ariane-risc-v-cpu)
+   * [CVA6 RISC-V CPU](#cva6-risc-v-cpu)
    * [Table of Contents](#table-of-contents)
       * [Getting Started](#getting-started)
          * [Running User-Space Applications](#running-user-space-applications)
@@ -44,10 +44,18 @@ Table of Contents
       * [Going Beyond](#going-beyond)
          * [CI Testsuites and Randomized Constrained Testing with Torture](#ci-testsuites-and-randomized-constrained-testing-with-torture)
          * [Re-generating the Bootcode (ZSBL)](#re-generating-the-bootcode-zsbl)
+         * [Co-simulation with Dromajo](#co-simulation-with-dromajo)
    * [Contributing](#contributing)
    * [Acknowledgements](#acknowledgements)
 
 Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
+## Tool Requirements
+
+* `verilator >= 4.002`
+
+> There is currently a known issue with version 4.106 and 4.108. 4.106 does not
+> compile and 4.108 hangs after a couple of cycles simulation time.
 
 ## Getting Started
 
@@ -55,11 +63,11 @@ Go and get the [RISC-V tools](https://github.com/riscv/riscv-tools). Make sure t
 
 Checkout the repository and initialize all submodules
 ```
-$ git clone https://github.com/pulp-platform/ariane.git
+$ git clone https://github.com/openhwgroup/cva6.git
 $ git submodule update --init --recursive
 ```
 
-Build the Verilator model of Ariane by using the Makefile:
+Build the Verilator model of CVA6 by using the Makefile:
 ```
 $ make verilate
 ```
@@ -85,7 +93,7 @@ $ spike-dasm < trace_hart_00.dasm > logfile.txt
 
 ### Running User-Space Applications
 
-It is possible to run user-space binaries on Ariane with `riscv-pk` ([link](https://github.com/riscv/riscv-pk)).
+It is possible to run user-space binaries on CVA6 with `riscv-pk` ([link](https://github.com/riscv/riscv-pk)).
 
 ```
 $ mkdir build
@@ -102,7 +110,7 @@ $ echo '
 #include <stdio.h>
 
 int main(int argc, char const *argv[]) {
-    printf("Hello Ariane!\\n");
+    printf("Hello CVA6!\\n");
     return 0;
 }' > hello.c
 $ riscv64-unknown-elf-gcc hello.c -o hello.elf
@@ -122,7 +130,7 @@ $ make sim elf-bin=$RISCV/riscv64-unknown-elf/bin/pk target-options=hello.elf  b
 
 ## FPGA Emulation
 
-We currently only provide support for the [Genesys 2 board](https://reference.digilentinc.com/reference/programmable-logic/genesys-2/reference-manual). We provide pre-build bitstream and memory configuration files for the Genesys 2 [here](https://github.com/pulp-platform/ariane/releases).
+We currently only provide support for the [Genesys 2 board](https://reference.digilentinc.com/reference/programmable-logic/genesys-2/reference-manual). We provide pre-build bitstream and memory configuration files for the Genesys 2 [here](https://github.com/openhwgroup/cva6/releases).
 
 Tested on Vivado 2018.2. The FPGA SoC currently contains the following peripherals:
 
@@ -132,7 +140,7 @@ Tested on Vivado 2018.2. The FPGA SoC currently contains the following periphera
 - JTAG port (see debugging section below)
 - Bootrom containing zero stage bootloader and device tree.
 
-![](docs/img/fpga_bd.png)
+![](docs/_static/fpga_bd.png)
 
 > The ethernet controller and the corresponding network connection is still work in progress and not functional at the moment. Expect some updates soon-ish.
 
@@ -239,9 +247,9 @@ You can read or write device memory by using:
 
 ### Preliminary Support for OpenPiton Cache System
 
-Ariane has preliminary support for the OpenPiton distributed cache system from Princeton University. To this end, a different L1 cache subsystem (`src/cache_subsystem/wt_cache_subsystem.sv`) has been developed that follows a write-through protocol and that has support for cache invalidations and atomics.
+CVA6 has preliminary support for the OpenPiton distributed cache system from Princeton University. To this end, a different L1 cache subsystem (`src/cache_subsystem/wt_cache_subsystem.sv`) has been developed that follows a write-through protocol and that has support for cache invalidations and atomics.
 
-The corresponding integration patches will be released on [OpenPiton GitHub repository](https://github.com/PrincetonUniversity/openpiton). Check the `README` in that repository to see how to use Ariane in the OpenPiton setting.
+The corresponding integration patches will be released on [OpenPiton GitHub repository](https://github.com/PrincetonUniversity/openpiton). Check the `README` in that repository to see how to use CVA6 in the OpenPiton setting.
 
 To activate the different cache system, compile your code with the macro `WT_DCACHE` (set by default).
 
@@ -284,7 +292,7 @@ $ make torture-rtest-verilator
 ```
 This runs the randomized program on Spike and on the RTL target, and checks whether the two signatures match. The random instruction mix can be configured in the `./tmp/riscv-torture/config/default.config` file.
 
-Ariane can dump a trace-log in Questa which can be easily diffed against Spike with commit log enabled. In `include/ariane_pkg.sv` set:
+CVA6 can dump a trace-log in Questa which can be easily diffed against Spike with commit log enabled. In `include/ariane_pkg.sv` set:
 
 ```verilog
 localparam bit ENABLE_SPIKE_COMMIT_LOG = 1'b1;
@@ -336,6 +344,22 @@ There are a couple of caveats:
 The zero stage bootloader (ZSBL) for RTL simulation lives in `bootrom/` while the bootcode for the FPGA is in `fpga/src/bootrom`. The RTL bootcode simply jumps to the base of the DRAM where the FSBL takes over. For the FPGA the ZSBL performs additional housekeeping. Both bootloader pass the hartid as well as address to the device tree in argumen register `a0` and `a1` respectively.
 
 To re-generate the bootcode you can use the existing makefile within those directories. To generate the SystemVerilog files you will need the `bitstring` python package installed on your system.
+
+### Co-simulation with Dromajo
+CVA6 can be co-simulated with [Dromajo](https://github.com/chipsalliance/dromajo) (currently in the verilator model).
+
+```
+make verilate DROMAJO=1
+make run-dromajo-verilator BIN=/path/to/elf
+```
+
+The co-simulation flow is depicted in the figure below.
+![image](https://user-images.githubusercontent.com/8511359/84510824-7ceb3b80-ac7a-11ea-9530-24c428ee87d9.png)
+1. Load the binary of interest into Dromajo.
+2. Run Dromajo stand alone and let a couple of instructions to complete.
+3. Dump the checkpoint. This is the whole architectural state of the reference model. Dromajo dumps the main and boot memories. In addition, it generates a boot code. If you were to run that code it will restore the whole architectural state. This means that you can bring any two or more cores into complete synced architectural state by running this piece of code.
+4. Load the checkpoint into the RTL memory and the instance of Dromajo in RTL. Dromajo gets linked to a simulator as a shared library. RTL communicates to Dromajo through set of DPI calls.
+5. Run the RTL simulation and perform co-simulation.
 
 # Contributing
 
